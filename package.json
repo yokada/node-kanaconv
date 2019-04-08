@@ -1,0 +1,10 @@
+{
+  "name": "kanaconv",
+  "version": "0.0.1",
+  "description": "",
+  "author": "lvs-yokada@livesense.co.jp",
+  "dependencies": {
+    "node-addon-api": "1.6.2"
+  },
+  "private": true
+}
