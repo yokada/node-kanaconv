@@ -15,4 +15,4 @@ console.log('結果:', kanaconv.convert("０１２３　:ａｂｃ/ＡＢＣ\n",
 console.log('結果:', kanaconv.convert("０１２３　:ａｂｃ/ＡＢＣ\n", 's'));
 
 // k: 「全角カタカナ」を「半角」に変換します。
-console.log('結果:', kanaconv.convert("０１２３　:ａｂｃ/ＡＢＣﾟァアイウエオ\n", 'k'));
+console.log('結果:', kanaconv.convert("ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ\n", 'k'));

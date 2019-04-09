@@ -5,6 +5,54 @@ std::string kanaconv::hello() {
     return "あいうえお";
 }
 
+Napi::Value kanaconv::ConvertWrapped(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() != 2) {
+        Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    //DEBUG_PRINT("HK_MAP.size()=%ld\n", HK_MAP.size());
+    //DEBUG_PRINT("HK_MAP[0].size()=%ld\n", HK_MAP[0].size());
+    /*
+    for (auto it = HK_MAP.begin(); it != HK_MAP.end(); ++it) {
+        for (auto it2 = (*it).begin(); it2 != (*it).end(); ++it2) {
+            std::cout << *it2 << std::endl;
+        }
+    }
+    */
+
+    std::string optStr = info[1].As<Napi::String>().Utf8Value();
+    kanaconv::ConvertOptions opts(optStr);
+    if (!opts.IsValid()) {
+        Napi::TypeError::New(env, "Wrong options specified").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    std::string buf;
+    std::string str = info[0].As<Napi::String>().Utf8Value();
+    Utf8Chars chars(str);
+    for (auto it = chars.list_.begin(); it != chars.list_.end(); ++it) {
+        if (opts.Has('r') && IsZ_EI_LOWER(*it)) {
+            ToH_EI_LOWER(it);
+        } else if (opts.Has('r') && IsZ_EI_UPPER(*it)) {
+            ToH_EI_UPPER(it);
+        } else if (opts.Has('n') && IsZ_SU(*it)) {
+            ToH_SU(it);
+        } else if (opts.Has('s') && IsZ_SPACE(*it)) {
+            ToH_SPACE(it);
+        } else if (opts.Has('k') && IsZ_KA(*it)) {
+            ToZH_HK(it, HK_MAP_ZKA, HK_MAP_HKA);
+        } else if (opts.Has('h') && IsZ_HI(*it)) {
+            ToZH_HK(it, HK_MAP_ZHI, HK_MAP_HKA);
+        }
+        buf += *it;
+    }
+
+    return Napi::String::New(env, buf);
+}
+
 kanaconv::Utf8Chars::Utf8Chars(std::string orig_str) {
     orig_c_str_ = (uint8_t*)orig_str.c_str();
     Parse();
@@ -96,6 +144,12 @@ bool kanaconv::IsZ_KA(std::string s) {
     }
     return false;
 }
+bool kanaconv::IsZ_HI(std::string s) {
+    if (s >= u8"ぁ" && s <= u8"ゖ") {
+        return true;
+    }
+    return false;
+}
 
 void kanaconv::ToH_EI_LOWER(std::list<std::string>::iterator it) {
     std::string s = *it;
@@ -113,49 +167,13 @@ void kanaconv::ToH_SPACE(std::list<std::string>::iterator it) {
     std::string s = *it;
     *it = s[2]-0x60;
 }
-void kanaconv::ToH_KA(std::list<std::string>::iterator it) {
+void kanaconv::ToZH_HK(std::list<std::string>::iterator it, uint32_t hk_map_from, uint32_t hk_map_to) {
     std::string s = *it;
-    if (s == u8"ァ") { *it = u8"ｧ"; }
-    else if (s == u8"ア") { *it = u8"ｱ"; }
-    else if (s == u8"イ") { *it = u8"ｲ"; }
-    else { *it = '?'; }
+    for (uint32_t i = 0; i < HK_MAP.size(); ++i) {
+        if (s == HK_MAP[i][hk_map_from]) { *it = HK_MAP[i][hk_map_to]; }
+    }
 }
 
-Napi::Value kanaconv::ConvertWrapped(const Napi::CallbackInfo& info) {
-    Napi::Env env = info.Env();
-
-    if (info.Length() != 2) {
-        Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
-        return env.Null();
-    }
-
-    std::string optStr = info[1].As<Napi::String>().Utf8Value();
-    kanaconv::ConvertOptions opts(optStr);
-    if (!opts.IsValid()) {
-        Napi::TypeError::New(env, "Wrong options specified").ThrowAsJavaScriptException();
-        return env.Null();
-    }
-
-    std::string buf;
-    std::string str = info[0].As<Napi::String>().Utf8Value();
-    Utf8Chars chars(str);
-    for (auto it = chars.list_.begin(); it != chars.list_.end(); ++it) {
-        if (opts.Has('r') && IsZ_EI_LOWER(*it)) {
-            ToH_EI_LOWER(it);
-        } else if (opts.Has('r') && IsZ_EI_UPPER(*it)) {
-            ToH_EI_UPPER(it);
-        } else if (opts.Has('n') && IsZ_SU(*it)) {
-            ToH_SU(it);
-        } else if (opts.Has('s') && IsZ_SPACE(*it)) {
-            ToH_SPACE(it);
-        } else if (opts.Has('k') && IsZ_KA(*it)) {
-            ToH_KA(it);
-        }
-        buf += *it;
-    }
-
-    return Napi::String::New(env, buf);
-}
 
 Napi::Object kanaconv::Init(Napi::Env env, Napi::Object exports) {
     exports.Set("hello", Napi::Function::New(env, kanaconv::HelloWrapped));
