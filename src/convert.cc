@@ -46,6 +46,8 @@ Napi::Value kanaconv::ConvertWrapped(const Napi::CallbackInfo& info) {
             ToZH_HK(it, HK_MAP_ZKA, HK_MAP_HKA);
         } else if (opts.Has('h') && IsZ_HI(*it)) {
             ToZH_HK(it, HK_MAP_ZHI, HK_MAP_HKA);
+        } else if (opts.Has('c') && IsZ_KA(*it)) {
+            ToZH_HK(it, HK_MAP_ZKA, HK_MAP_ZHI);
         }
         buf += *it;
     }
